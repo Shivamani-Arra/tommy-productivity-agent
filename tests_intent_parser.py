@@ -17,6 +17,10 @@ def run_tests():
     assert check("What are the remaing tasks today?", "show_today")
     assert check("Give me tasks that I need to complete today.", "show_today")
     assert check("What are todays completed tasks?", "show_today_completed")
+    parsed = check("Tomorrow 6 to 8 am I should write screenplay.", "schedule_task_session")
+    assert parsed["task_name"] == "write screenplay"
+    assert parsed["start_time"] == "06:00"
+    assert parsed["duration_hours"] == 2
     parsed = check("I completed math at 9 to 10:30.", "complete_session")
     assert parsed["task_name"] == "math"
     assert parsed["start_time"] == "09:00"

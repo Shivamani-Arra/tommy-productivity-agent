@@ -57,6 +57,10 @@ def parse_intent(message: str):
     if _asks_today_schedule(lowered):
         return {"intent": "show_today"}
 
+    time_block = _parse_time_block(lowered)
+    if time_block:
+        return time_block
+
     if re.search(r"\b(on track|risk|risky|danger|deadline pressure)\b", lowered):
         return {"intent": "risk"}
 
@@ -138,6 +142,31 @@ def _parse_task(text: str):
         }
 
     return None
+
+
+def _parse_time_block(text: str):
+    range_info = _parse_time_range(text)
+    if not range_info:
+        return None
+
+    action_match = re.search(
+        r"\b(?:i\s+)?(?:should|need\s+to|have\s+to|will|want\s+to|am\s+going\s+to|i'll)\s+(.+)$",
+        text,
+    )
+    if not action_match:
+        return None
+
+    task_name = normalize_task_name(_clean_task_name(action_match.group(1)))
+    if not task_name:
+        return None
+
+    return {
+        "intent": "schedule_task_session",
+        "task_name": task_name,
+        "start_time": range_info["start_time"],
+        "schedule_date": parse_relative_day(text, default_today=True),
+        "duration_hours": range_info["duration_hours"],
+    }
 
 
 def _asks_today_completed(text: str):
@@ -450,6 +479,36 @@ def parse_time(text: str):
         if match:
             return formatter(match)
     return None
+
+
+def _parse_time_range(text: str):
+    match = re.search(
+        r"\b(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*(?:to|-)\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)\b",
+        text,
+    )
+    if not match:
+        return None
+
+    start_raw = match.group(1)
+    start_meridiem = match.group(2) or match.group(4)
+    end_raw = match.group(3)
+    end_meridiem = match.group(4)
+    start_time = parse_time(f"{start_raw} {start_meridiem}")
+    end_time = parse_time(f"{end_raw} {end_meridiem}")
+    if not start_time or not end_time:
+        return None
+
+    start_hour, start_minute = [int(part) for part in start_time.split(":")]
+    end_hour, end_minute = [int(part) for part in end_time.split(":")]
+    start_minutes = start_hour * 60 + start_minute
+    end_minutes = end_hour * 60 + end_minute
+    if end_minutes <= start_minutes:
+        end_minutes += 24 * 60
+
+    return {
+        "start_time": start_time,
+        "duration_hours": round((end_minutes - start_minutes) / 60, 2),
+    }
 
 
 def _parse_duration(text: str):
