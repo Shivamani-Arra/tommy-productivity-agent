@@ -1,0 +1,8 @@
+apscheduler
+google-api-python-client
+google-auth
+google-auth-oauthlib
+python-dotenv
+python-telegram-bot
+requests
+supabase

@@ -1,0 +1,22 @@
+# Secrets and local credentials
+.env
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Local logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# Local runtime artifacts
+*.sqlite
+*.db
