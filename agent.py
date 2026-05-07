@@ -35,7 +35,7 @@ from tools.productivity_tools import (
     swap_schedule,
     spread_daily_schedule,
 )
-from tools.task_tools import add_task, get_all_tasks, mark_task_complete, normalize_task_name
+from tools.task_tools import add_task, get_all_tasks, mark_all_tasks_complete, mark_task_complete, normalize_task_name
 from tools.telegram_tools import send_telegram_message
 
 
@@ -58,6 +58,7 @@ tool_map = {
     "add_task": add_task,
     "get_all_tasks": get_all_tasks,
     "mark_task_complete": mark_task_complete,
+    "mark_all_tasks_complete": mark_all_tasks_complete,
     "cancel_schedule": cancel_schedule,
     "cancel_schedule_at_time": cancel_schedule_at_time,
     "complete_scheduled_session": complete_scheduled_session,
@@ -570,6 +571,9 @@ def _execute_structured_intent(intent: dict, user_message: str, user_id: str):
             {"task_name": intent["task_name"]},
             user_id=user_id,
         )
+
+    if name == "complete_all":
+        return execute_tool("mark_all_tasks_complete", {}, user_id=user_id)
 
     if name == "postpone":
         return execute_tool(

@@ -134,6 +134,37 @@ def mark_task_complete(task_name: str, user_id: str = "default"):
     return f"Task '{task_name}' marked as complete.{suffix}"
 
 
+def mark_all_tasks_complete(user_id: str = "default"):
+    """Mark every pending task complete and cancel future scheduled calendar sessions."""
+    query = supabase.table("tasks").select("*").eq("status", "pending")
+    if user_id:
+        query = query.eq("user_id", str(user_id))
+    try:
+        tasks = query.execute().data or []
+    except Exception:
+        tasks = supabase.table("tasks").select("*").eq("status", "pending").execute().data or []
+
+    if not tasks:
+        return "No pending tasks found."
+
+    deleted_events = _delete_future_calendar_events(tasks, user_id)
+    task_ids = [str(task.get("id")) for task in tasks if task.get("id")]
+
+    updated = 0
+    for task in tasks:
+        try:
+            query = supabase.table("tasks").update({"status": "completed"}).eq("id", task["id"])
+            if user_id:
+                query = query.eq("user_id", str(user_id))
+            query.execute()
+            updated += 1
+        except Exception:
+            pass
+
+    suffix = f" Deleted {deleted_events} future calendar event(s)." if deleted_events else ""
+    return f"Marked {updated} pending task(s) as complete.{suffix}"
+
+
 def save_task_calendar_event(task_name: str, deadline: str, event_id: str, user_id: str = "default"):
     """Store the deadline calendar event ID on the matching task."""
     if not event_id:

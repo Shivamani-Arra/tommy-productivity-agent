@@ -13,6 +13,7 @@ def run_tests():
     assert check("Before Sundat study 5 hours for math", "add_task")["task_name"] == "math"
     assert check("I studied math for 1 hour", "progress")["hours_completed"] == 1
     assert check("I finished math", "complete")["task_name"] == "math"
+    assert check("Mark all the pending tasks as completed", "complete_all")
     assert check("Remaining work today.", "show_today")
     assert check("What are the remaing tasks today?", "show_today")
     assert check("Give me tasks that I need to complete today.", "show_today")

@@ -284,6 +284,9 @@ def _parse_session_completion(text: str):
 
 
 def _parse_complete(text: str):
+    if re.search(r"\b(?:mark|complete|finish|done)\b", text) and re.search(r"\ball\b", text) and re.search(r"\bpending\s+tasks?\b|\btasks?\b", text):
+        return {"intent": "complete_all"}
+
     match = re.search(r"(?:i\s+)?(?:finished|completed|done|complete)\s+(.+)", text)
     if not match:
         return None
