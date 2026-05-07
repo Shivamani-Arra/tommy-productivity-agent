@@ -1,5 +1,6 @@
 import inspect
 import json
+import os
 import re
 from datetime import date, timedelta
 
@@ -39,6 +40,8 @@ from tools.telegram_tools import send_telegram_message
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL_NAME = "llama3.2:3b"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 WEEKDAYS = {
     "monday": 0,
     "tuesday": 1,
@@ -910,6 +913,9 @@ Recent memory:
         {"role": "user", "content": user_message},
     ]
 
+    if os.getenv("GEMINI_API_KEY"):
+        return _run_gemini_agent(user_message, system_prompt, user_id)
+
     for iteration in range(10):
         try:
             print(f"\n[Iteration {iteration + 1}]")
@@ -981,3 +987,130 @@ Recent memory:
             return f"Unexpected error: {str(e)}"
 
     return "I have completed all the actions for your request."
+
+
+def _run_gemini_agent(user_message: str, system_prompt: str, user_id: str):
+    """Cloud LLM fallback. Gemini chooses tools using a strict JSON protocol."""
+    transcript = [
+        f"User message: {user_message}",
+        "Decide the best next action. Use a tool when real work is needed.",
+    ]
+
+    for iteration in range(6):
+        payload = {
+            "systemInstruction": {
+                "parts": [{"text": _gemini_system_prompt(system_prompt)}]
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": "\n\n".join(transcript)}],
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "responseMimeType": "application/json",
+            },
+        }
+
+        try:
+            response = requests.post(
+                GEMINI_URL.format(model=os.getenv("GEMINI_MODEL", GEMINI_MODEL)),
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": os.getenv("GEMINI_API_KEY", ""),
+                },
+                json=payload,
+                timeout=60,
+            )
+        except requests.exceptions.Timeout:
+            return "The cloud AI model is taking too long. Please try again in a moment."
+        except requests.exceptions.RequestException as exc:
+            return f"Cloud AI connection error: {exc}"
+
+        if response.status_code != 200:
+            return f"Cloud AI error {response.status_code}: {response.text}"
+
+        decision = _parse_gemini_decision(response.json())
+        if not decision:
+            return "I could not understand that yet. Please say it with a task, time, or deadline."
+
+        if decision.get("reply"):
+            final_response = str(decision["reply"]).strip()
+            remember_conversation(user_message, final_response, user_id=user_id)
+            return final_response
+
+        tool_name = decision.get("tool")
+        tool_args = decision.get("arguments") or {}
+        if tool_name not in tool_map:
+            return "I understood you, but I do not have the right tool for that yet."
+        if not isinstance(tool_args, dict):
+            tool_args = {}
+
+        result = execute_tool(tool_name, tool_args, user_id=user_id)
+        if (
+            tool_name == "add_task"
+            and "Tool error" not in result
+            and "already exists" not in result
+        ):
+            schedule_result = execute_tool(
+                "spread_daily_schedule",
+                {
+                    "days_ahead": 14,
+                    "create_calendar_events": True,
+                },
+                user_id=user_id,
+            )
+            result += f"\n{schedule_result}"
+
+        transcript.append(
+            f"Tool used: {tool_name}\nArguments: {json.dumps(tool_args)}\nResult: {result}\n"
+            "Now either call another needed tool or return a concise final reply."
+        )
+
+    return "I took the action, but the cloud AI needed too many steps to summarize it."
+
+
+def _gemini_system_prompt(system_prompt: str):
+    tool_lines = []
+    for tool in tools:
+        function = tool.get("function", {})
+        name = function.get("name", "")
+        description = function.get("description", "")
+        properties = function.get("parameters", {}).get("properties", {})
+        args = ", ".join(properties.keys())
+        tool_lines.append(f"- {name}({args}): {description}")
+
+    return f"""{system_prompt}
+
+You are running in cloud mode with access to real tools.
+
+Available tools:
+{chr(10).join(tool_lines)}
+
+Return exactly one JSON object. No markdown.
+
+To call a tool:
+{{"tool":"tool_name","arguments":{{"arg":"value"}}}}
+
+To reply without a tool:
+{{"reply":"message to user"}}
+
+Rules:
+- Use tools for tasks, calendar events, scheduling, progress, completion, reminders, risk, and cleanup.
+- Dates must be YYYY-MM-DD.
+- Times must be HH:MM 24-hour format.
+- Do not invent that something was saved or scheduled; call a tool first.
+- After a tool result is shown in the transcript, return a concise final reply unless another tool is truly needed.
+"""
+
+
+def _parse_gemini_decision(data):
+    try:
+        parts = data["candidates"][0]["content"]["parts"]
+        text = "".join(part.get("text", "") for part in parts).strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.DOTALL).strip()
+        return json.loads(text)
+    except Exception:
+        return None

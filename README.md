@@ -30,6 +30,7 @@ Prepone tomorrow's math schedule to today
 - Supports pending follow-ups, such as asking for a missing meeting time.
 - Stores per-user data using Telegram chat IDs.
 - Includes daily reminders and an optional local admin dashboard.
+- Uses Gemini as a cloud LLM fallback when `GEMINI_API_KEY` is configured, while keeping Ollama available for local development.
 
 ## Project Structure
 

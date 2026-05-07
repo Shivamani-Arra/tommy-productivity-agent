@@ -22,10 +22,14 @@ SUPABASE_KEY
 TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID
 GOOGLE_TOKEN_JSON
+GEMINI_API_KEY
+GEMINI_MODEL=gemini-2.5-flash
 HOST=0.0.0.0
 ```
 
 `GOOGLE_TOKEN_JSON` should be the full contents of local `token.json` pasted as one environment variable. Do not commit `token.json`.
+
+`GEMINI_API_KEY` is used by the cloud AI fallback. Without it, the deployed app still handles known productivity patterns, but unknown messages cannot use LLM reasoning.
 
 After Render gives you a URL, connect Telegram to the webhook:
 

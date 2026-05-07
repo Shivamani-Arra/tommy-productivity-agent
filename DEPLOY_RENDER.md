@@ -27,10 +27,14 @@ SUPABASE_KEY
 TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID
 GOOGLE_TOKEN_JSON
+GEMINI_API_KEY
+GEMINI_MODEL=gemini-2.5-flash
 HOST=0.0.0.0
 ```
 
 For `GOOGLE_TOKEN_JSON`, open local `token.json`, copy the full JSON content, and paste it into Render as the variable value.
+
+For `GEMINI_API_KEY`, create a key in Google AI Studio and paste it into Render. This makes the deployed bot a cloud AI agent instead of relying on local Ollama.
 
 ## Render Settings
 
