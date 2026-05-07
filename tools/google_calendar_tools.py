@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta, time
+import json
+import os
+
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
@@ -9,7 +12,11 @@ TIMEZONE = 'Asia/Kolkata'
 
 
 def _calendar_service():
-    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    token_json = os.getenv("GOOGLE_TOKEN_JSON")
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    else:
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     return build('calendar', 'v3', credentials=creds)
 
 def create_calendar_event(

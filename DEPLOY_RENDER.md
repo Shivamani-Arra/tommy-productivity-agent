@@ -1,0 +1,77 @@
+# Deploy Tommy on Render
+
+## What Render Will Run
+
+Render runs:
+
+```text
+python admin_dashboard.py
+```
+
+This provides:
+
+```text
+/          Admin dashboard and browser demo
+/chat      Browser demo message endpoint
+/telegram  Telegram webhook endpoint
+/health    Render health check
+```
+
+## Required Environment Variables
+
+Set these in Render:
+
+```text
+SUPABASE_URL
+SUPABASE_KEY
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
+GOOGLE_TOKEN_JSON
+HOST=0.0.0.0
+```
+
+For `GOOGLE_TOKEN_JSON`, open local `token.json`, copy the full JSON content, and paste it into Render as the variable value.
+
+## Render Settings
+
+```text
+Runtime: Python
+Build Command: pip install -r requirements.txt
+Start Command: python admin_dashboard.py
+Health Check Path: /health
+Plan: Free
+```
+
+The included `render.yaml` already contains the important defaults.
+
+## Connect Telegram
+
+After Render deploys, open this URL in your browser:
+
+```text
+https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook?url=https://YOUR-RENDER-APP.onrender.com/telegram
+```
+
+Replace:
+
+```text
+<TELEGRAM_BOT_TOKEN>
+YOUR-RENDER-APP
+```
+
+Then message the bot in Telegram.
+
+## Test Script
+
+Try:
+
+```text
+I need to study math for 5 hours before Sunday
+I studied math for 1 hour
+Postpone today's math to tomorrow
+What should I work on today?
+```
+
+## Important Limitation
+
+Render free web services can sleep. This is fine for a recruiter demo, but exact daily reminders are more reliable on your PC with Windows Task Scheduler or on a paid always-on worker.
