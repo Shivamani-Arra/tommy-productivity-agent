@@ -210,7 +210,7 @@ def _normalize_free_slots(slots):
     return sorted(normalized, key=lambda slot: (slot["date"], slot["start_time"]))
 
 
-def _find_target_slot(target_date, preferred_start_time, duration_hours):
+def _find_target_slot(target_date, preferred_start_time, duration_hours, allow_explicit_outside_hours=False):
     """Find a non-conflicting target slot on a date, preferring the original start time."""
     duration = float(duration_hours or 1)
     slots = _normalize_free_slots(_free_slots_or_default(
@@ -232,6 +232,34 @@ def _find_target_slot(target_date, preferred_start_time, duration_hours):
                 "changed_time": False,
                 "alternatives": slots,
             }
+
+    if allow_explicit_outside_hours:
+        try:
+            explicit_slots = _normalize_free_slots(get_free_time_slots(
+                target_date,
+                target_date,
+                work_start=preferred_start_time,
+                work_end=preferred_end.strftime("%H:%M"),
+            ))
+        except Exception:
+            explicit_slots = [{
+                "date": target_date,
+                "start_time": preferred_start_time,
+                "end_time": preferred_end.strftime("%H:%M"),
+                "hours": duration,
+            }]
+
+        for slot in explicit_slots:
+            slot_start = datetime.strptime(f"{slot['date']} {slot['start_time']}", "%Y-%m-%d %H:%M")
+            slot_end = datetime.strptime(f"{slot['date']} {slot['end_time']}", "%Y-%m-%d %H:%M")
+            if slot_start <= preferred_start and preferred_end <= slot_end:
+                return {
+                    "date": target_date,
+                    "start_time": preferred_start_time,
+                    "end_time": preferred_end.strftime("%H:%M"),
+                    "changed_time": False,
+                    "alternatives": slots,
+                }
 
     for slot in slots:
         if float(slot.get("hours") or 0) < duration:
@@ -541,7 +569,7 @@ def schedule_task_session(
             f"because it overlaps another scheduled task:\n{conflict_lines}"
         )
 
-    target_slot = _find_target_slot(target_date, start_time, hours)
+    target_slot = _find_target_slot(target_date, start_time, hours, allow_explicit_outside_hours=True)
     if target_slot.get("changed_time"):
         alternatives = target_slot.get("alternatives") or []
         available = "\n".join(
