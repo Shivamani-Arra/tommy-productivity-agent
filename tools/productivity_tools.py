@@ -158,9 +158,9 @@ def _default_slots(start_day, end_day):
     while current <= end_day:
         slots.append({
             "date": current.isoformat(),
-            "start_time": "09:00",
-            "end_time": "18:00",
-            "hours": 9.0
+            "start_time": "00:00",
+            "end_time": "23:59",
+            "hours": 23.98
         })
         current += timedelta(days=1)
     return slots
@@ -629,8 +629,8 @@ def schedule_task_session(
 
 
 def set_user_preferences(
-    study_start: str = "09:00",
-    study_end: str = "18:00",
+    study_start: str = "",
+    study_end: str = "",
     sleep_start: str = "23:00",
     sleep_end: str = "07:00",
     max_session_hours: float = 2.0,

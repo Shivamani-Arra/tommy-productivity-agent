@@ -279,8 +279,8 @@ def get_busy_blocks(start_date: str, end_date: str):
 def get_free_time_slots(
     start_date: str,
     end_date: str,
-    work_start: str = "09:00",
-    work_end: str = "18:00",
+    work_start: str = "00:00",
+    work_end: str = "23:59",
     min_slot_minutes: int = 30
 ):
     """Find free workday slots after subtracting Google Calendar events."""

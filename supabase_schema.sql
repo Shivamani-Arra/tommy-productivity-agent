@@ -96,8 +96,8 @@ alter table if exists pending_followups add column if not exists created_at time
 create table if not exists user_preferences (
     id uuid primary key default gen_random_uuid(),
     user_id text default 'default',
-    study_start text default '09:00',
-    study_end text default '18:00',
+    study_start text default '',
+    study_end text default '',
     sleep_start text default '23:00',
     sleep_end text default '07:00',
     max_session_hours numeric default 2,
@@ -108,8 +108,8 @@ create table if not exists user_preferences (
 );
 
 alter table if exists user_preferences add column if not exists user_id text default 'default';
-alter table if exists user_preferences add column if not exists study_start text default '09:00';
-alter table if exists user_preferences add column if not exists study_end text default '18:00';
+alter table if exists user_preferences add column if not exists study_start text default '';
+alter table if exists user_preferences add column if not exists study_end text default '';
 alter table if exists user_preferences add column if not exists sleep_start text default '23:00';
 alter table if exists user_preferences add column if not exists sleep_end text default '07:00';
 alter table if exists user_preferences add column if not exists max_session_hours numeric default 2;
@@ -117,6 +117,10 @@ alter table if exists user_preferences add column if not exists break_minutes in
 alter table if exists user_preferences add column if not exists no_study_days text default '';
 alter table if exists user_preferences add column if not exists preferred_subjects text default '';
 alter table if exists user_preferences add column if not exists updated_at timestamptz not null default now();
+
+update user_preferences
+set study_start = '', study_end = ''
+where study_start = '09:00' and study_end = '18:00';
 
 create index if not exists idx_tasks_user_status on tasks(user_id, status);
 create index if not exists idx_schedule_user_date on schedule(user_id, scheduled_date);
