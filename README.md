@@ -1,5 +1,7 @@
 # Tommy Productivity Agent
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 Tommy is a Telegram-based AI productivity assistant that turns natural messages into tasks, calendar sessions, progress tracking, reminders, and schedule changes.
 
 It is designed for simple, everyday language:
