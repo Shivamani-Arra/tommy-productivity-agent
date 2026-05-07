@@ -31,6 +31,8 @@ def run_tests():
     assert check("Postpone todays science schedule to tomorrow", "postpone")["task_name"] == "science"
     assert check("Prepone tomorrow science schedule to today", "prepone")["task_name"] == "science"
     assert check("cancel today science", "cancel_session")["task_name"] == "science"
+    parsed = check("Remove the task assigned tomorrow at 10 pm.", "cancel_session_at_time")
+    assert parsed["start_time"] == "22:00"
     assert check("make math 30 minutes today", "resize_session")["hours"] == 0.5
     assert check("move science to 6 pm today", "reschedule_session")["new_start_time"] == "18:00"
     assert check("reschedule science from 2 pm to 6 pm today", "reschedule_session")["source_start_time"] == "14:00"

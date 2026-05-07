@@ -326,6 +326,19 @@ def _parse_move(text: str):
 
 
 def _parse_session_command(text: str):
+    cancel_at_time = re.search(
+        r"\b(?:cancel|remove|delete)\b.+?\b(?:at|from)\s+(.+?)(?:\s+(today|tomorrow))?$",
+        text,
+    )
+    if cancel_at_time:
+        start_time = parse_time(cancel_at_time.group(1))
+        if start_time:
+            return {
+                "intent": "cancel_session_at_time",
+                "start_time": start_time,
+                "schedule_date": parse_relative_day(text, default_today=True),
+            }
+
     timed_task = re.search(
         r"\b(?:add|schedule)\s+(.+?)\s+(?:task\s+)?at\s+(.+?)(?:\s+(today|tomorrow))?$",
         text

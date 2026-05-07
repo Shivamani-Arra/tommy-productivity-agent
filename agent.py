@@ -10,6 +10,7 @@ from intent_parser import parse_intent
 from tools.google_calendar_tools import create_calendar_event, create_fixed_calendar_event
 from tools.productivity_tools import (
     cancel_schedule,
+    cancel_schedule_at_time,
     complete_scheduled_session,
     cleanup_duplicates,
     log_partial_progress,
@@ -58,6 +59,7 @@ tool_map = {
     "get_all_tasks": get_all_tasks,
     "mark_task_complete": mark_task_complete,
     "cancel_schedule": cancel_schedule,
+    "cancel_schedule_at_time": cancel_schedule_at_time,
     "complete_scheduled_session": complete_scheduled_session,
     "cleanup_duplicates": cleanup_duplicates,
     "send_telegram_message": send_telegram_message,
@@ -594,6 +596,12 @@ def _execute_structured_intent(intent: dict, user_message: str, user_id: str):
     if name == "cancel_session":
         return execute_tool("cancel_schedule", {
             "task_name": intent["task_name"],
+            "schedule_date": intent.get("schedule_date"),
+        }, user_id=user_id)
+
+    if name == "cancel_session_at_time":
+        return execute_tool("cancel_schedule_at_time", {
+            "start_time": intent["start_time"],
             "schedule_date": intent.get("schedule_date"),
         }, user_id=user_id)
 

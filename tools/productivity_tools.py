@@ -1038,6 +1038,28 @@ def cancel_schedule(task_name: str, schedule_date: str = None, user_id=DEFAULT_U
     return f"Cancelled {len(cancelled)} {task_name} session(s) on {target_date}."
 
 
+def cancel_schedule_at_time(start_time: str, schedule_date: str = None, user_id=DEFAULT_USER_ID):
+    """Cancel incomplete sessions on a date by exact start time."""
+    target_date = schedule_date or _today().isoformat()
+    rows = _select("schedule", "*", user_id)
+    matches = []
+
+    for row in rows:
+        if row.get("scheduled_date") != target_date or row.get("completed"):
+            continue
+        if row.get("start_time") != start_time:
+            continue
+        task = _task_by_id(row.get("task_id"), user_id)
+        display_name = task.get("task_name") if task else row.get("task_name", "Scheduled item")
+        _delete_event_quietly(row.get("calendar_event_id"))
+        _update("schedule", {"completed": True, "status": "cancelled"}, "id", row["id"])
+        matches.append(f"{display_name} ({row.get('start_time', '')}-{row.get('end_time', '')})")
+
+    if not matches:
+        return f"No scheduled item found on {target_date} at {start_time}."
+    return f"Cancelled {len(matches)} scheduled item(s) on {target_date} at {start_time}:\n" + "\n".join(matches)
+
+
 def resize_schedule(task_name: str, hours: float, schedule_date: str = None, user_id=DEFAULT_USER_ID):
     """Change today's matching session duration and update its calendar event."""
     target_date = schedule_date or _today().isoformat()
