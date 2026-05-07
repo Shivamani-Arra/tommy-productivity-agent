@@ -26,6 +26,7 @@ def run_tests():
     assert parsed["start_time"] == "09:00"
     assert parsed["end_time"] == "10:30"
     assert check("I have a meeting at 1 am on 8th of may", "fixed_event")["start_time"] == "01:00"
+    assert check("Schedule a meeting tomorrow at 10 pm.", "fixed_event")["start_time"] == "22:00"
     assert check("meeting tomorrow", "needs_info")["kind"] == "fixed_event_missing_time"
     assert check("Add study science task at 3:15pm.", "schedule_task_session")["start_time"] == "15:15"
     assert check("Postpone todays science schedule to tomorrow", "postpone")["task_name"] == "science"

@@ -67,6 +67,10 @@ def parse_intent(message: str):
     if re.fullmatch(r"/?cleanup|cleanup duplicates|clean duplicates", lowered):
         return {"intent": "cleanup"}
 
+    fixed_event = _parse_fixed_event(lowered, text)
+    if fixed_event:
+        return fixed_event
+
     session = _parse_session_command(lowered)
     if session:
         return session
@@ -74,10 +78,6 @@ def parse_intent(message: str):
     move_intent = _parse_move(lowered)
     if move_intent:
         return move_intent
-
-    fixed_event = _parse_fixed_event(lowered, text)
-    if fixed_event:
-        return fixed_event
 
     session_complete = _parse_session_completion(lowered)
     if session_complete:
