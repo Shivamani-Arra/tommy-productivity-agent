@@ -6,6 +6,7 @@ from tools.telegram_tools import send_telegram_message
 from agent import run_agent
 from tools.productivity_tools import replan_missed_work, score_deadline_risk, spread_daily_schedule
 import logging
+import os
 
 # Set up logging so you can see what the scheduler is doing
 logging.basicConfig(
@@ -13,6 +14,10 @@ logging.basicConfig(
     format='%(asctime)s - %(message)s'
 )
 log = logging.getLogger(__name__)
+
+
+def _target_user_id():
+    return os.getenv("TELEGRAM_CHAT_ID", "default")
 
 # ─────────────────────────────────────────
 # HELPER FUNCTIONS
@@ -25,7 +30,8 @@ def get_todays_schedule():
     query = supabase.table("schedule")\
         .select("*, tasks(task_name, deadline)")\
         .eq("scheduled_date", today)\
-        .eq("completed", False)
+        .eq("completed", False)\
+        .eq("user_id", str(_target_user_id()))
     try:
         result = query.execute()
     except Exception:
@@ -33,6 +39,7 @@ def get_todays_schedule():
             .select("*")\
             .eq("scheduled_date", today)\
             .eq("completed", False)\
+            .eq("user_id", str(_target_user_id()))\
             .execute()
     
     return result.data or []
@@ -44,7 +51,8 @@ def get_missed_sessions():
     query = supabase.table("schedule")\
         .select("*, tasks(task_name, deadline)")\
         .eq("scheduled_date", yesterday)\
-        .eq("completed", False)
+        .eq("completed", False)\
+        .eq("user_id", str(_target_user_id()))
     try:
         result = query.execute()
     except Exception:
@@ -52,6 +60,7 @@ def get_missed_sessions():
             .select("*")\
             .eq("scheduled_date", yesterday)\
             .eq("completed", False)\
+            .eq("user_id", str(_target_user_id()))\
             .execute()
     
     return result.data or []
@@ -64,6 +73,7 @@ def get_urgent_tasks():
     result = supabase.table("tasks")\
         .select("*")\
         .eq("status", "pending")\
+        .eq("user_id", str(_target_user_id()))\
         .lte("deadline", three_days_later)\
         .execute()
     
@@ -74,6 +84,7 @@ def get_all_pending_tasks():
     result = supabase.table("tasks")\
         .select("*")\
         .eq("status", "pending")\
+        .eq("user_id", str(_target_user_id()))\
         .order("deadline")\
         .execute()
     
@@ -85,7 +96,7 @@ def daily_schedule_spreading():
     Spreads pending task work across available calendar slots.
     """
     log.info("Spreading daily schedule...")
-    result = spread_daily_schedule(days_ahead=7, create_calendar_events=True)
+    result = spread_daily_schedule(days_ahead=7, create_calendar_events=True, user_id=_target_user_id())
     log.info(result)
 
 def missed_work_replanning():
@@ -93,7 +104,7 @@ def missed_work_replanning():
     Runs daily to move missed sessions back into the upcoming plan.
     """
     log.info("Replanning missed work...")
-    result = replan_missed_work()
+    result = replan_missed_work(user_id=_target_user_id())
     log.info(result)
 
 # ─────────────────────────────────────────
@@ -111,7 +122,7 @@ def morning_briefing():
     todays_sessions = get_todays_schedule()
     missed_sessions = get_missed_sessions()
     urgent_tasks = get_urgent_tasks()
-    risk_summary = score_deadline_risk()
+    risk_summary = score_deadline_risk(user_id=_target_user_id())
     
     # Build context for the agent
     context = f"""

@@ -8,7 +8,11 @@ import requests
 
 from agent import run_agent
 from database.superbase_client import supabase
+from scheduler import deadline_warning, evening_checkin, morning_briefing, start_background_scheduler
 from tools.productivity_tools import cleanup_duplicates
+
+
+_scheduler = None
 
 
 def _rows(table):
@@ -28,6 +32,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             body = cleanup_duplicates(user_id=user_id)
         elif parsed.path == "/health":
             body = "ok"
+        elif parsed.path == "/jobs/morning":
+            body = self._run_protected_job(parsed, morning_briefing, "morning briefing")
+        elif parsed.path == "/jobs/deadline":
+            body = self._run_protected_job(parsed, deadline_warning, "deadline warning")
+        elif parsed.path == "/jobs/evening":
+            body = self._run_protected_job(parsed, evening_checkin, "evening check-in")
         else:
             body = self._render(user_id, "")
 
@@ -72,6 +82,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
+
+    def _run_protected_job(self, parsed, job, label):
+        secret = os.getenv("CRON_SECRET", "")
+        params = parse_qs(parsed.query)
+        if secret and params.get("key", [""])[0] != secret:
+            return "unauthorized"
+        try:
+            job()
+            return f"ran {label}"
+        except Exception as exc:
+            return f"failed {label}: {exc}"
 
     def _handle_telegram_webhook(self, data):
         try:
@@ -150,6 +171,16 @@ def _send_telegram_reply(chat_id, text):
     )
 
 
+def _start_scheduler_if_enabled():
+    global _scheduler
+    if _scheduler is not None:
+        return
+    enabled = os.getenv("ENABLE_BACKGROUND_SCHEDULER", "true").lower()
+    if enabled not in {"1", "true", "yes", "on"}:
+        return
+    _scheduler = start_background_scheduler()
+
+
 def _telegram_command_response(text, chat_id):
     command = text.split()[0].lower()
 
@@ -190,6 +221,7 @@ def _telegram_command_response(text, chat_id):
 
 
 if __name__ == "__main__":
+    _start_scheduler_if_enabled()
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8080"))
     server = HTTPServer((host, port), DashboardHandler)

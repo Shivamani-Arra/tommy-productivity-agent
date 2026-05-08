@@ -48,8 +48,14 @@ def parse_intent(message: str):
     if not lowered:
         return {"intent": "unknown"}
 
+    if re.search(r"\b(what(?:'s| is)?|who)\b", lowered) and re.search(r"\b(your name|are you)\b", lowered):
+        return {"intent": "identity"}
+
     if re.fullmatch(r"/?tasks|show tasks|show my tasks|pending tasks", lowered):
         return {"intent": "show_tasks"}
+
+    if re.search(r"\b(reminders?|remainders?|notifications?)\b", lowered) and re.search(r"\b(when|what\s+times?|schedule|time)\b", lowered):
+        return {"intent": "show_reminder_schedule"}
 
     if _asks_today_completed(lowered):
         return {"intent": "show_today_completed"}

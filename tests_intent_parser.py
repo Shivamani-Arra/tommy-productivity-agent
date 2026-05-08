@@ -8,6 +8,7 @@ def check(message, intent):
 
 
 def run_tests():
+    assert check("What is your name?", "identity")
     assert check("Complete 5 hours of math study before Sunday", "add_task")["task_name"] == "math"
     assert check("I need to study math for 5 hours before Sunday", "add_task")["task_name"] == "math"
     assert check("Before Sundat study 5 hours for math", "add_task")["task_name"] == "math"

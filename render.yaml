@@ -26,3 +26,7 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
+      - key: ENABLE_BACKGROUND_SCHEDULER
+        value: "true"
+      - key: CRON_SECRET
+        sync: false

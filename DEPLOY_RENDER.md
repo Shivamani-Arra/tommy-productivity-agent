@@ -29,12 +29,22 @@ TELEGRAM_CHAT_ID
 GOOGLE_TOKEN_JSON
 GEMINI_API_KEY
 GEMINI_MODEL=gemini-2.5-flash
+ENABLE_BACKGROUND_SCHEDULER=true
+CRON_SECRET
 HOST=0.0.0.0
 ```
 
 For `GOOGLE_TOKEN_JSON`, open local `token.json`, copy the full JSON content, and paste it into Render as the variable value.
 
 For `GEMINI_API_KEY`, create a key in Google AI Studio and paste it into Render. This makes the deployed bot a cloud AI agent instead of relying on local Ollama.
+
+`ENABLE_BACKGROUND_SCHEDULER=true` starts the 8 AM, 12 PM, and 8 PM reminder jobs inside the Render web service. Render free services may sleep, so for more reliable reminders create external cron pings to:
+
+```text
+https://YOUR-RENDER-APP.onrender.com/jobs/morning?key=CRON_SECRET
+https://YOUR-RENDER-APP.onrender.com/jobs/deadline?key=CRON_SECRET
+https://YOUR-RENDER-APP.onrender.com/jobs/evening?key=CRON_SECRET
+```
 
 ## Render Settings
 

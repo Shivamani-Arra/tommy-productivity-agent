@@ -495,8 +495,24 @@ def _execute_structured_intent(intent: dict, user_message: str, user_id: str):
             save_pending_followup(intent.get("kind", "unknown"), payload, intent.get("question", "I need one more detail."), user_id=user_id)
         return intent.get("question", "I need one more detail.")
 
+    if name == "identity":
+        return "I am Tommy, a personal productivity agent."
+
     if name == "show_tasks":
         return execute_tool("get_all_tasks", {}, user_id=user_id)
+
+    if name == "show_reminder_schedule":
+        return (
+            "Reminder schedule in Asia/Kolkata time:\n"
+            "- 7:30 AM: replan missed work\n"
+            "- 7:45 AM: spread today's schedule\n"
+            "- 8:00 AM: morning briefing\n"
+            "- 12:00 PM: deadline warning\n"
+            "- 8:00 PM: evening check-in\n"
+            "- Sunday 7:00 PM: weekly summary\n\n"
+            "On Render free tier, reminders only run while the service is awake. "
+            "For reliable delivery, use an external cron ping or an always-on worker."
+        )
 
     if name == "show_today":
         return execute_tool("show_today_schedule", {}, user_id=user_id)

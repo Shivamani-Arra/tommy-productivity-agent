@@ -24,12 +24,16 @@ TELEGRAM_CHAT_ID
 GOOGLE_TOKEN_JSON
 GEMINI_API_KEY
 GEMINI_MODEL=gemini-2.5-flash
+ENABLE_BACKGROUND_SCHEDULER=true
+CRON_SECRET
 HOST=0.0.0.0
 ```
 
 `GOOGLE_TOKEN_JSON` should be the full contents of local `token.json` pasted as one environment variable. Do not commit `token.json`.
 
 `GEMINI_API_KEY` is used by the cloud AI fallback. Without it, the deployed app still handles known productivity patterns, but unknown messages cannot use LLM reasoning.
+
+The reminder scheduler runs at 8 AM, 12 PM, and 8 PM Asia/Kolkata while the service is awake. On Render free tier, use `/jobs/morning`, `/jobs/deadline`, and `/jobs/evening` with `CRON_SECRET` from an external cron service for reliable wakeups.
 
 After Render gives you a URL, connect Telegram to the webhook:
 
